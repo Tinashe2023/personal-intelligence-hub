@@ -1,0 +1,294 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PIOS Design System — Dark Mode Premium Dashboard
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Core palette */
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-card: #161622;
+  --bg-card-hover: #1c1c2e;
+  --bg-elevated: #1e1e30;
+
+  /* Borders & surfaces */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-accent: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(22, 22, 34, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  /* Text */
+  --text-primary: #f0f0f5;
+  --text-secondary: #8888a0;
+  --text-muted: #55556a;
+
+  /* Accent gradients */
+  --accent-blue: #3b82f6;
+  --accent-purple: #8b5cf6;
+  --accent-cyan: #06b6d4;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-rose: #f43f5e;
+  --accent-indigo: #6366f1;
+
+  /* Glow effects */
+  --glow-blue: rgba(59, 130, 246, 0.15);
+  --glow-purple: rgba(139, 92, 246, 0.15);
+  --glow-cyan: rgba(6, 182, 212, 0.15);
+  --glow-emerald: rgba(16, 185, 129, 0.15);
+  --glow-rose: rgba(244, 63, 94, 0.15);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Dashboard Card System
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-accent), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-accent);
+  transform: translateY(-2px);
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+/* Card glow variants */
+.card-glow-blue { box-shadow: 0 0 0 1px var(--border-subtle), 0 4px 24px var(--glow-blue); }
+.card-glow-purple { box-shadow: 0 0 0 1px var(--border-subtle), 0 4px 24px var(--glow-purple); }
+.card-glow-cyan { box-shadow: 0 0 0 1px var(--border-subtle), 0 4px 24px var(--glow-cyan); }
+.card-glow-emerald { box-shadow: 0 0 0 1px var(--border-subtle), 0 4px 24px var(--glow-emerald); }
+.card-glow-rose { box-shadow: 0 0 0 1px var(--border-subtle), 0 4px 24px var(--glow-rose); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Metric Gauge
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.gauge-ring {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.gauge-ring svg {
+  transform: rotate(-90deg);
+}
+
+.gauge-ring .gauge-bg {
+  fill: none;
+  stroke: var(--border-subtle);
+  stroke-width: 6;
+}
+
+.gauge-ring .gauge-fill {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gauge-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Status Indicators
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.status-dot.online { background: var(--accent-emerald); box-shadow: 0 0 8px var(--accent-emerald); }
+.status-dot.warning { background: var(--accent-amber); box-shadow: 0 0 8px var(--accent-amber); }
+.status-dot.offline { background: var(--accent-rose); box-shadow: 0 0 8px var(--accent-rose); }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Animations
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-delay-1 { animation-delay: 0.1s; }
+.animate-delay-2 { animation-delay: 0.2s; }
+.animate-delay-3 { animation-delay: 0.3s; }
+.animate-delay-4 { animation-delay: 0.4s; }
+.animate-delay-5 { animation-delay: 0.5s; }
+.animate-delay-6 { animation-delay: 0.6s; }
+
+/* Loading shimmer */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-card) 0%, var(--bg-elevated) 50%, var(--bg-card) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Tags & Badges
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.badge-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+.badge-purple { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+.badge-cyan { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
+.badge-emerald { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+.badge-amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+.badge-rose { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   AI Insight Cards
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.ai-insight {
+  border-left: 3px solid var(--accent-purple);
+  padding-left: 12px;
+  margin-bottom: 12px;
+  transition: border-color 0.3s ease;
+}
+
+.ai-insight:hover {
+  border-left-color: var(--accent-cyan);
+}
+
+.ai-sparkle {
+  display: inline-block;
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  50% { opacity: 0.7; filter: brightness(1.5); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Responsive Grid
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 1280px) {
+  .dashboard-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 1024px) {
+  .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .dashboard-grid { grid-template-columns: 1fr; }
+}
+
+.col-span-full { grid-column: 1 / -1; }
+.col-span-2 { grid-column: span 2; }
+.col-span-3 { grid-column: span 3; }
+
+@media (max-width: 1024px) {
+  .col-span-2, .col-span-3 { grid-column: span 1; }
+}
+
+@media (min-width: 1025px) and (max-width: 1280px) {
+  .col-span-3 { grid-column: span 2; }
+}

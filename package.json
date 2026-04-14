@@ -1,0 +1,31 @@
+{
+  "name": "pios",
+  "version": "1.0.0",
+  "description": "PIOS - Centralized Intelligent Dashboard",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "scheduler": "node scheduler/index.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.0.0",
+    "openai": "^4.0.0",
+    "xml2js": "^0.6.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "next": "^14.0.0",
+    "mongoose": "^8.0.0",
+    "node-cron": "^3.0.0",
+    "googleapis": "^118.0.0",
+    "@google-analytics/data": "^4.2.0",
+    "tailwindcss": "^3.3.0"
+  },
+  "devDependencies": {
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0"
+  }
+}
