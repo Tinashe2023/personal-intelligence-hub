@@ -1,9 +1,9 @@
 /**
- * PIOS Cron — Data Collection + Persistence
- * ============================================
+ * PIOS Cron — Data Collection + Persistence (Fire-and-Forget)
+ * ==============================================================
  * Triggered externally (cron-job.org) every 30 minutes.
- * Fetches weather, news, research, and system data,
- * then persists to MongoDB for caching & historical tracking.
+ * Responds immediately with 200, then fetches & persists data
+ * in the background (weather, news, research, system metrics).
  *
  * GET /api/cron/collect?key=CRON_SECRET
  */
@@ -20,10 +20,8 @@ import ResearchPaper from "@/models/ResearchPaper";
 import SystemMetric from "@/models/SystemMetric";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120; // arXiv + Semantic Scholar can be slow
 
 export async function GET(request) {
-  // Verify cron secret
   const { searchParams } = new URL(request.url);
   const key = searchParams.get("key");
 
@@ -31,11 +29,29 @@ export async function GET(request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Fire collection in the background — don't await
+  collectInBackground().catch((err) =>
+    console.error("[CRON] Background collection failed:", err.message)
+  );
+
+  // Respond immediately so cron-job.org gets a fast 200
+  return Response.json({
+    status: "accepted",
+    message: "Data collection started in background",
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * Runs all data collection + MongoDB persistence in the background.
+ */
+async function collectInBackground() {
+  const startTime = Date.now();
+  console.log("[CRON] Background data collection started...");
+
   await connectDB();
 
-  const results = { timestamp: new Date().toISOString(), jobs: {} };
-
-  // ── System Metrics ──────────────────────────────────────────────────────
+  // ── System Metrics (fast — local os module) ─────────────────────────────
   try {
     const stats = await getSystemStats();
 
@@ -53,19 +69,13 @@ export async function GET(request) {
       },
     });
 
-    // Trigger Telegram alert if thresholds exceeded
     await sendSystemAlert(stats);
-
-    results.jobs.system = {
-      status: "ok",
-      cpu: stats.cpu?.usage?.toFixed(1) + "%",
-      ram: stats.ram?.percentage?.toFixed(1) + "%",
-    };
+    console.log("[CRON] System metrics saved");
   } catch (error) {
-    results.jobs.system = { status: "error", message: error.message };
+    console.error("[CRON] System error:", error.message);
   }
 
-  // ── Weather ─────────────────────────────────────────────────────────────
+  // ── Weather (fast — single API call) ────────────────────────────────────
   try {
     const weather = await getWeather();
     const current = weather?.current_weather;
@@ -82,86 +92,63 @@ export async function GET(request) {
         },
       });
     }
-
-    results.jobs.weather = {
-      status: "ok",
-      temp: current?.temperature ?? null,
-    };
+    console.log("[CRON] Weather saved:", current?.temperature + "°C");
   } catch (error) {
-    results.jobs.weather = { status: "error", message: error.message };
+    console.error("[CRON] Weather error:", error.message);
   }
 
-  // ── News ────────────────────────────────────────────────────────────────
+  // ── News (medium — single API call) ─────────────────────────────────────
   try {
     const news = await getNews();
     const articles = news?.articles || [];
 
-    if (articles.length > 0) {
-      // Categorize and save (avoid duplicates by URL)
-      let savedCount = 0;
-      for (const article of articles.slice(0, 20)) {
-        const exists = await NewsItem.findOne({ url: article.url }).lean();
-        if (!exists) {
-          const category = categorizeArticle(article.title + " " + (article.description || ""));
-          await NewsItem.create({
-            title: article.title,
-            source: article.source?.name || "Unknown",
-            url: article.url,
-            category,
-            publishedAt: article.publishedAt ? new Date(article.publishedAt) : new Date(),
-          });
-          savedCount++;
-        }
+    let savedCount = 0;
+    for (const article of articles.slice(0, 20)) {
+      const exists = await NewsItem.findOne({ url: article.url }).lean();
+      if (!exists) {
+        const category = categorizeArticle(article.title + " " + (article.description || ""));
+        await NewsItem.create({
+          title: article.title,
+          source: article.source?.name || "Unknown",
+          url: article.url,
+          category,
+          publishedAt: article.publishedAt ? new Date(article.publishedAt) : new Date(),
+        });
+        savedCount++;
       }
-      results.jobs.news = {
-        status: "ok",
-        total: articles.length,
-        newlySaved: savedCount,
-      };
-    } else {
-      results.jobs.news = { status: "ok", total: 0, newlySaved: 0 };
     }
+    console.log(`[CRON] News: ${savedCount} new articles saved`);
   } catch (error) {
-    results.jobs.news = { status: "error", message: error.message };
+    console.error("[CRON] News error:", error.message);
   }
 
-  // ── Research Papers ─────────────────────────────────────────────────────
+  // ── Research Papers (slow — arXiv has 3s delays) ────────────────────────
   try {
     const papers = await getResearchPapers();
 
-    if (papers.length > 0) {
-      let savedCount = 0;
-      for (const paper of papers) {
-        const exists = await ResearchPaper.findOne({
+    let savedCount = 0;
+    for (const paper of papers) {
+      const exists = await ResearchPaper.findOne({ title: paper.title }).lean();
+      if (!exists) {
+        await ResearchPaper.create({
           title: paper.title,
-        }).lean();
-        if (!exists) {
-          await ResearchPaper.create({
-            title: paper.title,
-            authors: paper.authors?.map((a) => a.name || a) || [],
-            year: paper.year,
-            citationCount: paper.citationCount,
-            source: paper.source || "semantic_scholar",
-            abstract: paper.abstract || "",
-            paperId: paper.paperId,
-          });
-          savedCount++;
-        }
+          authors: paper.authors?.map((a) => a.name || a) || [],
+          year: paper.year,
+          citationCount: paper.citationCount,
+          source: paper.source || "semantic_scholar",
+          abstract: paper.abstract || "",
+          paperId: paper.paperId,
+        });
+        savedCount++;
       }
-      results.jobs.research = {
-        status: "ok",
-        total: papers.length,
-        newlySaved: savedCount,
-      };
-    } else {
-      results.jobs.research = { status: "ok", total: 0, newlySaved: 0 };
     }
+    console.log(`[CRON] Research: ${savedCount} new papers saved`);
   } catch (error) {
-    results.jobs.research = { status: "error", message: error.message };
+    console.error("[CRON] Research error:", error.message);
   }
 
-  console.log("[CRON] Data collection + persistence completed:", JSON.stringify(results));
-  return Response.json(results);
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  console.log(`[CRON] Background collection completed in ${elapsed}s`);
 }
 
 /**
