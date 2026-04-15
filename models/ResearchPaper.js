@@ -7,8 +7,14 @@ const ResearchPaperSchema = new mongoose.Schema({
   citationCount: Number,
   topic: {
     type: String,
-    enum: ["quantum computing", "blockchain", "federated learning", "LLM"],
+    enum: ["quantum computing", "blockchain", "federated learning", "LLM", "AI"],
   },
+  source: {
+    type: String,
+    enum: ["semantic_scholar", "arxiv", "core"],
+    default: "semantic_scholar",
+  },
+  abstract: String,
   paperId: String,
   url: String,
   fetchedAt: { type: Date, default: Date.now },

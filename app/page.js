@@ -307,6 +307,7 @@ export default function Home() {
   });
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(null);
+  const [activeFilter, setActiveFilter] = useState("all");
 
   useEffect(() => {
     if (localStorage.getItem("pios_access") === "granted") {
@@ -414,6 +415,64 @@ export default function Home() {
           <LiveClock />
         </header>
 
+        {/* ═══ TOPIC FILTER BAR ═══════════════════════════════════════ */}
+        <div
+          className="animate-fade-in"
+          style={{
+            display: "flex",
+            gap: 8,
+            marginBottom: "1.5rem",
+            flexWrap: "wrap",
+          }}
+        >
+          {[
+            { key: "all", label: "All", icon: "🌐" },
+            { key: "quantum", label: "Quantum", icon: "⚛️" },
+            { key: "blockchain", label: "Blockchain", icon: "🔗" },
+            { key: "ai", label: "AI", icon: "🤖" },
+            { key: "geopolitics", label: "Geopolitics", icon: "🌍" },
+          ].map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setActiveFilter(f.key)}
+              style={{
+                padding: "6px 16px",
+                borderRadius: 20,
+                border: activeFilter === f.key
+                  ? "1px solid rgba(139, 92, 246, 0.5)"
+                  : "1px solid var(--border-subtle)",
+                background: activeFilter === f.key
+                  ? "rgba(139, 92, 246, 0.15)"
+                  : "var(--bg-card)",
+                color: activeFilter === f.key
+                  ? "#a78bfa"
+                  : "var(--text-secondary)",
+                fontSize: "0.8rem",
+                fontWeight: 500,
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+              onMouseEnter={(e) => {
+                if (activeFilter !== f.key) {
+                  e.currentTarget.style.borderColor = "rgba(139, 92, 246, 0.3)";
+                  e.currentTarget.style.color = "var(--text-primary)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeFilter !== f.key) {
+                  e.currentTarget.style.borderColor = "var(--border-subtle)";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                }
+              }}
+            >
+              <span>{f.icon}</span> {f.label}
+            </button>
+          ))}
+        </div>
+
         <div className="dashboard-grid">
 
           {/* ═══ SYSTEM METRICS ═══════════════════════════════════════ */}
@@ -421,9 +480,12 @@ export default function Home() {
             <div className="card card-glow-blue animate-fade-in animate-delay-1 col-span-2">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                 <h2 style={{ fontSize: "1rem", fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: "1.2rem" }}>💻</span> System Metrics
+                  <span style={{ fontSize: "1.2rem" }}>🖥️</span> Server Metrics
                 </h2>
-                <span className="badge badge-blue">{system.platform} • {system.arch}</span>
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <span className="badge badge-blue">{system.platform} • {system.arch}</span>
+                  <span className="badge badge-purple" style={{ fontSize: "0.6rem" }}>Render</span>
+                </div>
               </div>
 
               <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", marginBottom: 16 }}>
@@ -596,17 +658,31 @@ export default function Home() {
           )}
 
           {/* ═══ NEWS ═════════════════════════════════════════════════ */}
-          {news?.articles && (
+          {news?.articles && (() => {
+            const filteredArticles = activeFilter === "all"
+              ? news.articles
+              : news.articles.filter((a) => {
+                  const text = ((a.title || "") + " " + (a.description || "")).toLowerCase();
+                  if (activeFilter === "quantum") return /quantum/.test(text);
+                  if (activeFilter === "blockchain") return /blockchain|crypto|defi|web3/.test(text);
+                  if (activeFilter === "ai") return /\bai\b|artificial intelligence|machine learning|neural|deep learning|llm/.test(text);
+                  if (activeFilter === "geopolitics") return /geopolit|sanctions|diplomacy|conflict|nato|treaty/.test(text);
+                  return true;
+                });
+            return filteredArticles.length > 0 ? (
             <div className="card animate-fade-in animate-delay-3 col-span-2">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                 <h2 style={{ fontSize: "1rem", fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: "1.2rem" }}>📰</span> Latest News
+                  {activeFilter !== "all" && (
+                    <span style={{ fontSize: "0.7rem", color: "#a78bfa", fontWeight: 400 }}>({activeFilter})</span>
+                  )}
                 </h2>
-                <span className="badge badge-amber">{news.totalResults} articles</span>
+                <span className="badge badge-amber">{filteredArticles.length} articles</span>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column" }}>
-                {news.articles.slice(0, 5).map((article, idx) => (
+                {filteredArticles.slice(0, 8).map((article, idx) => (
                   <ExpandableItem
                     key={idx}
                     title={article.title}
@@ -624,20 +700,35 @@ export default function Home() {
                 ))}
               </div>
             </div>
-          )}
+            ) : null;
+          })()}
 
           {/* ═══ RESEARCH ═════════════════════════════════════════════ */}
-          {research && Array.isArray(research) && research.length > 0 && (
+          {research && Array.isArray(research) && research.length > 0 && (() => {
+            const filteredPapers = activeFilter === "all"
+              ? research
+              : research.filter((p) => {
+                  const text = (p.title || "").toLowerCase();
+                  if (activeFilter === "quantum") return /quantum/.test(text);
+                  if (activeFilter === "blockchain") return /blockchain|distributed ledger/.test(text);
+                  if (activeFilter === "ai") return /\bai\b|artificial intelligence|machine learning|neural|deep learning|llm|language model|federated/.test(text);
+                  if (activeFilter === "geopolitics") return /geopolit|security|policy|governance/.test(text);
+                  return true;
+                });
+            return filteredPapers.length > 0 ? (
             <div className="card animate-fade-in animate-delay-4 col-span-2">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                 <h2 style={{ fontSize: "1rem", fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: "1.2rem" }}>🔬</span> Research Papers
+                  {activeFilter !== "all" && (
+                    <span style={{ fontSize: "0.7rem", color: "#a78bfa", fontWeight: 400 }}>({activeFilter})</span>
+                  )}
                 </h2>
-                <span className="badge badge-emerald">{research.length} papers</span>
+                <span className="badge badge-emerald">{filteredPapers.length} papers</span>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column" }}>
-                {research.slice(0, 5).map((paper, idx) => (
+                {filteredPapers.slice(0, 8).map((paper, idx) => (
                   <ExpandableItem
                     key={idx}
                     title={paper.title}
@@ -650,16 +741,33 @@ export default function Home() {
                             📊 {paper.citationCount} citations
                           </span>
                         )}
+                        {paper.source && (
+                          <span style={{
+                            fontSize: "0.6rem",
+                            padding: "2px 6px",
+                            borderRadius: 4,
+                            background: paper.source === "arxiv" ? "rgba(251, 113, 133, 0.15)" : "rgba(59, 130, 246, 0.15)",
+                            color: paper.source === "arxiv" ? "#fb7185" : "#60a5fa",
+                            fontWeight: 600,
+                          }}>
+                            {paper.source === "arxiv" ? "arXiv" : "S2"}
+                          </span>
+                        )}
                       </>
                     }
                     content={paper.abstract || "Abstract snippet or content unavailable."}
                     aiSummary={aiInsights?.researchInsights?.find(r => r.title === paper.title || r.input?.includes(paper.title))?.explanation}
-                    link={`https://scholar.google.com/scholar?q=${encodeURIComponent(paper.title)}`}
+                    link={
+                      paper.source === "arxiv" && paper.paperId
+                        ? `https://arxiv.org/abs/${paper.paperId}`
+                        : `https://scholar.google.com/scholar?q=${encodeURIComponent(paper.title)}`
+                    }
                   />
                 ))}
               </div>
             </div>
-          )}
+            ) : null;
+          })()}
 
         </div>
 
