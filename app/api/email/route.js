@@ -1,5 +1,7 @@
 import { getFilteredEmails } from "@/lib/gmail";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const data = await getFilteredEmails();

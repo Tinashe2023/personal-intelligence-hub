@@ -1,5 +1,7 @@
 import { getGA4Stats, getGA4DailyStats, getGA4TopPages } from "@/lib/analytics";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const [stats, daily, topPages] = await Promise.allSettled([

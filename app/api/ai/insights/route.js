@@ -7,6 +7,8 @@ import { getAllCachedByType } from "@/lib/ai/cache";
  * Does NOT trigger AI calls — just reads cached results.
  * AI processing happens via cron scheduler or POST /api/ai/process.
  */
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const [

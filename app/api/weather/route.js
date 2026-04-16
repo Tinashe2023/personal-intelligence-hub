@@ -1,5 +1,7 @@
 import { getWeather } from "@/lib/weather";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const data = await getWeather();
